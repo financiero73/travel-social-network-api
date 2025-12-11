@@ -9,7 +9,16 @@ from solar.access import public
 from datetime import datetime
 
 # La clave API de OpenAI se inyectará en el entorno
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# Inicialización opcional: solo si existe la clave
+try:
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if api_key:
+        client = OpenAI(api_key=api_key)
+    else:
+        client = None
+except Exception as e:
+    print(f"Warning: OpenAI client could not be initialized: {e}")
+    client = None
 
 @public
 def generate_trip_recommendations(
@@ -80,6 +89,11 @@ def generate_trip_recommendations(
     }
 
     try:
+        # Verificar si el cliente de OpenAI está disponible
+        if client is None:
+            print("OpenAI client is not available. Returning empty recommendations.")
+            return []
+        
         response = client.chat.completions.create(
             model="gpt-4.1-mini", # Usamos un modelo rápido y eficiente
             messages=[
