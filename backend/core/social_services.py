@@ -222,10 +222,6 @@ def get_user_saved_posts(user_id: UUID, location_filter: Optional[str] = None, c
     query = "SELECT * FROM saved_posts WHERE user_id = %(user_id)s AND is_active = true"
     params = {"user_id": user_id}
     
-    if location_filter:
-        query += " AND location_category = %(location)s"
-        params["location"] = location_filter
-    
     if collection_filter:
         query += " AND collection_name = %(collection)s"
         params["collection"] = collection_filter

@@ -12,7 +12,6 @@ class SavedPost(Table):
     
     # Organization
     collection_name: Optional[str] = None  # 'Paris Trip', 'Food Goals', etc.
-    location_category: Optional[str] = None  # Auto-extracted from post location
     personal_notes: Optional[str] = None
     priority: Optional[str] = None  # 'high', 'medium', 'low'
     
