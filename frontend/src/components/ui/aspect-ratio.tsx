@@ -1,1 +1,5 @@
-{"error":{"code":"api_version_disabled","message":"v6 of this endpoint has been disabled. Please use v8 instead.","fid":"2fe875f854d13ec92e5625aa4705ee7097890d81"}}
+import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio"
+
+const AspectRatio = AspectRatioPrimitive.Root
+
+export { AspectRatio }

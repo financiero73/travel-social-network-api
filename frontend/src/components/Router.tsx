@@ -1,1 +1,16 @@
-{"error":{"code":"api_version_disabled","message":"v6 of this endpoint has been disabled. Please use v8 instead.","fid":"38f17599f000f62206700e6165506f9f8f472b2b"}}
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import OnboardingScreen from './OnboardingScreen';
+import MainApp from './MainApp';
+
+const Router: React.FC = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<MainApp />} />
+      <Route path="/onboarding" element={<OnboardingScreen />} />
+      <Route path="/app" element={<MainApp />} />
+    </Routes>
+  );
+};
+
+export default Router;

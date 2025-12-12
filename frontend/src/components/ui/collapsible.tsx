@@ -1,1 +1,11 @@
-{"error":{"code":"api_version_disabled","message":"v6 of this endpoint has been disabled. Please use v8 instead.","fid":"7693aff25230524cc4aa90d6490c7d1a3388d700"}}
+"use client"
+
+import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
+
+const Collapsible = CollapsiblePrimitive.Root
+
+const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger
+
+const CollapsibleContent = CollapsiblePrimitive.CollapsibleContent
+
+export { Collapsible, CollapsibleTrigger, CollapsibleContent }
