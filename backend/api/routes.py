@@ -631,3 +631,103 @@ async def social_services_vote_review(body: BodySocialServicesVoteReview = Body(
     """
     response = await run_sync_in_thread(social_services.vote_review, user_id=body.user_id, review_id=body.review_id, is_helpful=body.is_helpful)
     return response
+
+
+# ==================== DATABASE MIGRATION ENDPOINT ====================
+
+@app.post('/api/admin/migrate_database')
+async def admin_migrate_database():
+    """
+    Run database migrations to fix schema issues and create new tables.
+    WARNING: This should only be run once!
+    """
+    from solar.table import get_pool
+    
+    try:
+        pool = get_pool()
+        pg_keys = list(pool.keys())
+        
+        if not pg_keys:
+            return {"error": "No database connection available"}
+        
+        pg_key = pg_keys[0]  # Use first available connection
+        
+        results = []
+        
+        with pool[pg_key].getconn() as conn:
+            with conn.cursor() as cursor:
+                # Fix saved_posts table
+                try:
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name='saved_posts' AND column_name='location_category'
+                    """)
+                    if cursor.fetchone():
+                        cursor.execute("ALTER TABLE saved_posts DROP COLUMN IF EXISTS location_category CASCADE")
+                        results.append("✅ Removed location_category from saved_posts")
+                    else:
+                        results.append("ℹ️ location_category already removed")
+                except Exception as e:
+                    results.append(f"⚠️ Error fixing saved_posts: {str(e)}")
+                
+                # Fix follows table
+                try:
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name='follows' AND column_name='notification_enabled'
+                    """)
+                    if cursor.fetchone():
+                        cursor.execute("ALTER TABLE follows DROP COLUMN IF EXISTS notification_enabled CASCADE")
+                        results.append("✅ Removed notification_enabled from follows")
+                    else:
+                        results.append("ℹ️ notification_enabled already removed")
+                except Exception as e:
+                    results.append(f"⚠️ Error fixing follows: {str(e)}")
+                
+                # Create reviews table
+                try:
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS reviews (
+                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                            post_id UUID NOT NULL,
+                            user_id UUID NOT NULL,
+                            rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                            comment TEXT,
+                            helpful_count INTEGER DEFAULT 0,
+                            created_at TIMESTAMP DEFAULT NOW(),
+                            updated_at TIMESTAMP DEFAULT NOW(),
+                            is_active BOOLEAN DEFAULT TRUE,
+                            UNIQUE(user_id, post_id)
+                        )
+                    """)
+                    results.append("✅ Created reviews table")
+                except Exception as e:
+                    results.append(f"⚠️ Error creating reviews: {str(e)}")
+                
+                # Create review_votes table
+                try:
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS review_votes (
+                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                            review_id UUID NOT NULL,
+                            user_id UUID NOT NULL,
+                            is_helpful BOOLEAN NOT NULL,
+                            created_at TIMESTAMP DEFAULT NOW(),
+                            is_active BOOLEAN DEFAULT TRUE,
+                            UNIQUE(user_id, review_id)
+                        )
+                    """)
+                    results.append("✅ Created review_votes table")
+                except Exception as e:
+                    results.append(f"⚠️ Error creating review_votes: {str(e)}")
+                
+                # Commit all changes
+                conn.commit()
+                results.append("✅ Migration completed successfully!")
+        
+        return {"success": True, "results": results}
+    
+    except Exception as e:
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
