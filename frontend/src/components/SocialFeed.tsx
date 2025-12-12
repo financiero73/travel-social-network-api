@@ -223,13 +223,23 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
       
+      // Create abort controller with 60 second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      
+      console.log('Creating post with data:', postData);
+      alert('Creating post... This may take up to 60 seconds if the backend is waking up.');
+      
       const response = await fetch(`${apiUrl}/api/social_services/create_travel_post`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(postData)
+        body: JSON.stringify(postData),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -244,7 +254,11 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
       loadFeed();
     } catch (error: any) {
       console.error('Error creating post:', error);
-      alert(`Error creating post: ${error.message}`);
+      if (error.name === 'AbortError') {
+        alert('Error: Request timed out after 60 seconds. The backend may be sleeping. Please try again.');
+      } else {
+        alert(`Error creating post: ${error.message}`);
+      }
       throw error;
     }
   };
@@ -345,6 +359,10 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
         
+        // Create abort controller with 60 second timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        
         const response = await fetch(`${apiUrl}/api/social_services/get_social_feed`, {
           method: 'POST',
           headers: {
@@ -354,8 +372,11 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
             user_id: userId || "0b447f7b-9274-4a47-8ce2-4c113eb3cb6e",
             page: pageNum,
             limit: 20,
-          })
+          }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
