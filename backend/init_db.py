@@ -55,7 +55,6 @@ class SavedPost(Table):
     user_id: UUID
     post_id: UUID
     collection_name: str
-    personal_notes: str
     is_active: bool
     created_at: datetime
     updated_at: datetime

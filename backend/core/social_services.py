@@ -139,8 +139,6 @@ def save_post_to_wishlist(user_id: UUID, post_id: UUID, collection_name: Optiona
         saved.is_active = not saved.is_active
         if saved.is_active and collection_name:
             saved.collection_name = collection_name
-        if saved.is_active and notes:
-            saved.personal_notes = notes
         saved.updated_at = datetime.now()
         saved.sync()
         action = "saved" if saved.is_active else "unsaved"
@@ -149,8 +147,7 @@ def save_post_to_wishlist(user_id: UUID, post_id: UUID, collection_name: Optiona
         saved = SavedPost(
             user_id=user_id,
             post_id=post_id,
-            collection_name=collection_name,
-            personal_notes=notes
+            collection_name=collection_name
         )
         saved.sync()
         action = "saved"

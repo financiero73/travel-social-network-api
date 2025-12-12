@@ -1,5 +1,5 @@
 from solar import Table, ColumnDetails
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 import uuid
 
@@ -12,13 +12,6 @@ class SavedPost(Table):
     
     # Organization
     collection_name: Optional[str] = None  # 'Paris Trip', 'Food Goals', etc.
-    personal_notes: Optional[str] = None
-    priority: Optional[str] = None  # 'high', 'medium', 'low'
-    
-    # Planning integration
-    is_planned: bool = ColumnDetails(default=False)  # Added to actual trip plan
-    planned_date: Optional[datetime] = None
-    trip_id: Optional[uuid.UUID] = None  # Reference to future trip
     
     # Timestamps
     created_at: datetime = ColumnDetails(default_factory=datetime.now)
