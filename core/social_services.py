@@ -16,7 +16,7 @@ def get_social_feed(user_id: UUID, page: int = 0, limit: int = 20) -> List[Dict]
     
     # Get users that this user follows
     following_results = Follow.sql(
-        "SELECT following_id FROM follows WHERE follower_id = %(user_id)s AND is_active = true",
+        "SELECT following_id FROM follows WHERE follower_id = %(user_id)s",
         {"user_id": user_id}
     )
     
@@ -68,12 +68,12 @@ def get_social_feed(user_id: UUID, page: int = 0, limit: int = 20) -> List[Dict]
         
         # Check if current user has liked/saved this post
         like_results = PostLike.sql(
-            "SELECT id FROM post_likes WHERE user_id = %(user_id)s AND post_id = %(post_id)s AND is_active = true",
+            "SELECT id FROM post_likes WHERE user_id = %(user_id)s AND post_id = %(post_id)s",
             {"user_id": user_id, "post_id": post.id}
         )
         
         saved_results = SavedPost.sql(
-            "SELECT id FROM saved_posts WHERE user_id = %(user_id)s AND post_id = %(post_id)s AND is_active = true",
+            "SELECT id FROM saved_posts WHERE user_id = %(user_id)s AND post_id = %(post_id)s",
             {"user_id": user_id, "post_id": post.id}
         )
         
