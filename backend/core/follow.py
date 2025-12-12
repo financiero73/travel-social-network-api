@@ -14,4 +14,3 @@ class Follow(Table):
     
     # Status
     is_active: bool = ColumnDetails(default=True)
-    notification_enabled: bool = ColumnDetails(default=True)

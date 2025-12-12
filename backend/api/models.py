@@ -85,3 +85,44 @@ class BodySocialServicesCreateTravelPost(BaseModel):
 
 CreateTravelPostOutputSchema = TravelPost
     
+
+# ==================== REVIEWS SCHEMAS ====================
+
+from core.review import Review
+from core.review_vote import ReviewVote
+
+class BodySocialServicesCreateReview(BaseModel):
+  user_id: UUID
+  post_id: UUID
+  rating: int = Field(..., ge=1, le=5, description="Rating from 1 to 5 stars")
+  comment: Optional[str] = None
+
+CreateReviewOutputSchema = Dict
+
+class BodySocialServicesGetPostReviews(BaseModel):
+  post_id: UUID
+  page: int = 0
+  limit: int = 20
+
+GetPostReviewsOutputSchema = Dict
+
+class BodySocialServicesUpdateReview(BaseModel):
+  user_id: UUID
+  review_id: UUID
+  rating: Optional[int] = Field(None, ge=1, le=5, description="Rating from 1 to 5 stars")
+  comment: Optional[str] = None
+
+UpdateReviewOutputSchema = Dict
+
+class BodySocialServicesDeleteReview(BaseModel):
+  user_id: UUID
+  review_id: UUID
+
+DeleteReviewOutputSchema = Dict
+
+class BodySocialServicesVoteReview(BaseModel):
+  user_id: UUID
+  review_id: UUID
+  is_helpful: bool = Field(..., description="True if helpful, False if not helpful")
+
+VoteReviewOutputSchema = Dict

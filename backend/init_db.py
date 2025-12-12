@@ -55,11 +55,31 @@ class SavedPost(Table):
     user_id: UUID
     post_id: UUID
     collection_name: str
-    location_category: str
     personal_notes: str
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+class Review(Table):
+    __table_name__ = "reviews"
+    id: UUID = ColumnDetails(primary_key=True)
+    post_id: UUID
+    user_id: UUID
+    rating: int
+    comment: str
+    helpful_count: int
+    created_at: datetime
+    updated_at: datetime
+    is_active: bool
+
+class ReviewVote(Table):
+    __table_name__ = "review_votes"
+    id: UUID = ColumnDetails(primary_key=True)
+    review_id: UUID
+    user_id: UUID
+    is_helpful: bool
+    created_at: datetime
+    is_active: bool
 
 async def main():
     print("Creando tablas...")
@@ -68,6 +88,8 @@ async def main():
     Follow.create_table()
     PostLike.create_table()
     SavedPost.create_table()
+    Review.create_table()
+    ReviewVote.create_table()
     print("Tablas creadas con éxito.")
 
 if __name__ == "__main__":

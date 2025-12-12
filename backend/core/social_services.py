@@ -145,23 +145,11 @@ def save_post_to_wishlist(user_id: UUID, post_id: UUID, collection_name: Optiona
         saved.sync()
         action = "saved" if saved.is_active else "unsaved"
     else:
-        # Get post info for auto-categorization
-        post_results = TravelPost.sql(
-            "SELECT location_name, country, city FROM travel_posts WHERE id = %(post_id)s",
-            {"post_id": post_id}
-        )
-        
-        location_category = None
-        if post_results:
-            post_data = post_results[0]
-            location_category = post_data.get("city") or post_data.get("country") or post_data.get("location_name")
-        
         # Create new save
         saved = SavedPost(
             user_id=user_id,
             post_id=post_id,
             collection_name=collection_name,
-            location_category=location_category,
             personal_notes=notes
         )
         saved.sync()
@@ -303,3 +291,220 @@ def create_travel_post(user_id: UUID, caption: str, images: List[str], location_
     )
     
     return post
+
+
+# ==================== REVIEWS SYSTEM ====================
+
+from core.review import Review
+from core.review_vote import ReviewVote
+
+
+@public
+def create_review(user_id: UUID, post_id: UUID, rating: int, comment: Optional[str] = None) -> Dict:
+    """Create a review for a post."""
+    
+    # Validate rating
+    if rating < 1 or rating > 5:
+        raise ValueError("Rating must be between 1 and 5")
+    
+    # Check if user already reviewed this post
+    existing_review = Review.sql(
+        "SELECT * FROM reviews WHERE user_id = %(user_id)s AND post_id = %(post_id)s AND is_active = true",
+        {"user_id": user_id, "post_id": post_id}
+    )
+    
+    if existing_review:
+        raise ValueError("User has already reviewed this post")
+    
+    # Create review
+    review = Review(
+        user_id=user_id,
+        post_id=post_id,
+        rating=rating,
+        comment=comment
+    )
+    review.sync()
+    
+    # Update post's average rating and review count
+    _update_post_review_stats(post_id)
+    
+    return {
+        "review_id": str(review.id),
+        "rating": rating,
+        "comment": comment,
+        "created_at": review.created_at.isoformat()
+    }
+
+
+@public
+def get_post_reviews(post_id: UUID, page: int = 0, limit: int = 20) -> Dict:
+    """Get all reviews for a post."""
+    
+    offset = page * limit
+    
+    reviews_results = Review.sql(
+        """
+        SELECT r.*, u.username, u.display_name, u.profile_image_url, u.is_verified
+        FROM reviews r
+        JOIN travel_users u ON r.user_id = u.id
+        WHERE r.post_id = %(post_id)s AND r.is_active = true
+        ORDER BY r.helpful_count DESC, r.created_at DESC
+        LIMIT %(limit)s OFFSET %(offset)s
+        """,
+        {"post_id": post_id, "limit": limit, "offset": offset}
+    )
+    
+    # Get total count
+    count_results = Review.sql(
+        "SELECT COUNT(*) as total FROM reviews WHERE post_id = %(post_id)s AND is_active = true",
+        {"post_id": post_id}
+    )
+    total_reviews = count_results[0]["total"] if count_results else 0
+    
+    # Get average rating
+    avg_results = Review.sql(
+        "SELECT AVG(rating) as avg_rating FROM reviews WHERE post_id = %(post_id)s AND is_active = true",
+        {"post_id": post_id}
+    )
+    avg_rating = float(avg_results[0]["avg_rating"]) if avg_results and avg_results[0]["avg_rating"] else 0
+    
+    return {
+        "reviews": reviews_results,
+        "total_reviews": total_reviews,
+        "average_rating": round(avg_rating, 1),
+        "page": page,
+        "limit": limit
+    }
+
+
+@public
+def update_review(user_id: UUID, review_id: UUID, rating: Optional[int] = None, comment: Optional[str] = None) -> Dict:
+    """Update a user's own review."""
+    
+    # Get existing review
+    review_results = Review.sql(
+        "SELECT * FROM reviews WHERE id = %(review_id)s AND user_id = %(user_id)s AND is_active = true",
+        {"review_id": review_id, "user_id": user_id}
+    )
+    
+    if not review_results:
+        raise ValueError("Review not found or you don't have permission to edit it")
+    
+    review = Review(**review_results[0])
+    
+    # Update fields
+    if rating is not None:
+        if rating < 1 or rating > 5:
+            raise ValueError("Rating must be between 1 and 5")
+        review.rating = rating
+    
+    if comment is not None:
+        review.comment = comment
+    
+    review.updated_at = datetime.now()
+    review.sync()
+    
+    # Update post's average rating
+    _update_post_review_stats(review.post_id)
+    
+    return {
+        "review_id": str(review.id),
+        "rating": review.rating,
+        "comment": review.comment,
+        "updated_at": review.updated_at.isoformat()
+    }
+
+
+@public
+def delete_review(user_id: UUID, review_id: UUID) -> Dict:
+    """Delete a user's own review (soft delete)."""
+    
+    # Get existing review
+    review_results = Review.sql(
+        "SELECT * FROM reviews WHERE id = %(review_id)s AND user_id = %(user_id)s AND is_active = true",
+        {"review_id": review_id, "user_id": user_id}
+    )
+    
+    if not review_results:
+        raise ValueError("Review not found or you don't have permission to delete it")
+    
+    review = Review(**review_results[0])
+    review.is_active = False
+    review.updated_at = datetime.now()
+    review.sync()
+    
+    # Update post's average rating
+    _update_post_review_stats(review.post_id)
+    
+    return {"message": "Review deleted successfully"}
+
+
+@public
+def vote_review(user_id: UUID, review_id: UUID, is_helpful: bool) -> Dict:
+    """Vote on whether a review is helpful or not."""
+    
+    # Check if user already voted on this review
+    existing_vote = ReviewVote.sql(
+        "SELECT * FROM review_votes WHERE user_id = %(user_id)s AND review_id = %(review_id)s",
+        {"user_id": user_id, "review_id": review_id}
+    )
+    
+    if existing_vote:
+        # Update existing vote
+        vote = ReviewVote(**existing_vote[0])
+        if vote.is_helpful == is_helpful and vote.is_active:
+            # Same vote - toggle off
+            vote.is_active = False
+        else:
+            # Different vote or reactivating
+            vote.is_helpful = is_helpful
+            vote.is_active = True
+        vote.sync()
+    else:
+        # Create new vote
+        vote = ReviewVote(
+            user_id=user_id,
+            review_id=review_id,
+            is_helpful=is_helpful
+        )
+        vote.sync()
+    
+    # Update review's helpful count
+    helpful_count = len(ReviewVote.sql(
+        "SELECT id FROM review_votes WHERE review_id = %(review_id)s AND is_helpful = true AND is_active = true",
+        {"review_id": review_id}
+    ))
+    
+    Review.sql(
+        "UPDATE reviews SET helpful_count = %(count)s WHERE id = %(review_id)s",
+        {"count": helpful_count, "review_id": review_id}
+    )
+    
+    return {
+        "action": "voted" if vote.is_active else "vote_removed",
+        "is_helpful": is_helpful,
+        "helpful_count": helpful_count
+    }
+
+
+def _update_post_review_stats(post_id: UUID):
+    """Internal function to update post's review statistics."""
+    
+    # Get average rating
+    avg_results = Review.sql(
+        "SELECT AVG(rating) as avg_rating, COUNT(*) as total FROM reviews WHERE post_id = %(post_id)s AND is_active = true",
+        {"post_id": post_id}
+    )
+    
+    if avg_results and avg_results[0]["total"] > 0:
+        avg_rating = float(avg_results[0]["avg_rating"])
+        review_count = avg_results[0]["total"]
+    else:
+        avg_rating = 0
+        review_count = 0
+    
+    # Update post
+    TravelPost.sql(
+        "UPDATE travel_posts SET experience_rating = %(rating)s, comments_count = %(count)s WHERE id = %(post_id)s",
+        {"rating": round(avg_rating, 1), "count": review_count, "post_id": post_id}
+    )

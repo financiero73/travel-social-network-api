@@ -50,7 +50,7 @@ REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
 
 
 
-from .models import BodySocialServicesGetSocialFeed, GetSocialFeedOutputSchema, BodySocialServicesLikePost, LikePostOutputSchema, BodySocialServicesSavePostToWishlist, SavePostToWishlistOutputSchema, BodySocialServicesFollowUser, FollowUserOutputSchema, BodySocialServicesGetUserSavedPosts, GetUserSavedPostsOutputSchema, BodySocialServicesGetSavedLocations, GetSavedLocationsOutputSchema, BodySocialServicesCreateTravelPost, CreateTravelPostOutputSchema, BodyAIServicesGenerateTripRecommendations, GenerateTripRecommendationsOutputSchema
+from .models import BodySocialServicesGetSocialFeed, GetSocialFeedOutputSchema, BodySocialServicesLikePost, LikePostOutputSchema, BodySocialServicesSavePostToWishlist, SavePostToWishlistOutputSchema, BodySocialServicesFollowUser, FollowUserOutputSchema, BodySocialServicesGetUserSavedPosts, GetUserSavedPostsOutputSchema, BodySocialServicesGetSavedLocations, GetSavedLocationsOutputSchema, BodySocialServicesCreateTravelPost, CreateTravelPostOutputSchema, BodyAIServicesGenerateTripRecommendations, GenerateTripRecommendationsOutputSchema, BodySocialServicesCreateReview, CreateReviewOutputSchema, BodySocialServicesGetPostReviews, GetPostReviewsOutputSchema, BodySocialServicesUpdateReview, UpdateReviewOutputSchema, BodySocialServicesDeleteReview, DeleteReviewOutputSchema, BodySocialServicesVoteReview, VoteReviewOutputSchema
 from core import social_services
 from core import ai_services
 
@@ -583,4 +583,51 @@ async def ai_services_generate_trip_recommendations(body: BodyAIServicesGenerate
     Genera recomendaciones de viaje basadas en los objetivos del usuario.
     """
     response = await run_sync_in_thread(ai_services.generate_trip_recommendations, user_id=body.user_id, goals=body.goals, location=body.location, duration=body.duration)
+    return response
+
+
+# ==================== REVIEWS ENDPOINTS ====================
+
+@app.post('/api/social_services/create_review', response_model=CreateReviewOutputSchema, operation_id='social_services_create_review')
+async def social_services_create_review(body: BodySocialServicesCreateReview = Body(...)) -> CreateReviewOutputSchema:
+    """
+    Create a review for a post.
+    """
+    response = await run_sync_in_thread(social_services.create_review, user_id=body.user_id, post_id=body.post_id, rating=body.rating, comment=body.comment)
+    return response
+
+
+@app.post('/api/social_services/get_post_reviews', response_model=GetPostReviewsOutputSchema, operation_id='social_services_get_post_reviews')
+async def social_services_get_post_reviews(body: BodySocialServicesGetPostReviews = Body(...)) -> GetPostReviewsOutputSchema:
+    """
+    Get all reviews for a post with pagination.
+    """
+    response = await run_sync_in_thread(social_services.get_post_reviews, post_id=body.post_id, page=body.page, limit=body.limit)
+    return response
+
+
+@app.post('/api/social_services/update_review', response_model=UpdateReviewOutputSchema, operation_id='social_services_update_review')
+async def social_services_update_review(body: BodySocialServicesUpdateReview = Body(...)) -> UpdateReviewOutputSchema:
+    """
+    Update a user's own review.
+    """
+    response = await run_sync_in_thread(social_services.update_review, user_id=body.user_id, review_id=body.review_id, rating=body.rating, comment=body.comment)
+    return response
+
+
+@app.post('/api/social_services/delete_review', response_model=DeleteReviewOutputSchema, operation_id='social_services_delete_review')
+async def social_services_delete_review(body: BodySocialServicesDeleteReview = Body(...)) -> DeleteReviewOutputSchema:
+    """
+    Delete a user's own review (soft delete).
+    """
+    response = await run_sync_in_thread(social_services.delete_review, user_id=body.user_id, review_id=body.review_id)
+    return response
+
+
+@app.post('/api/social_services/vote_review', response_model=VoteReviewOutputSchema, operation_id='social_services_vote_review')
+async def social_services_vote_review(body: BodySocialServicesVoteReview = Body(...)) -> VoteReviewOutputSchema:
+    """
+    Vote on whether a review is helpful or not.
+    """
+    response = await run_sync_in_thread(social_services.vote_review, user_id=body.user_id, review_id=body.review_id, is_helpful=body.is_helpful)
     return response
