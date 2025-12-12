@@ -343,15 +343,26 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
       
       // Try to load real data, fallback to mock data
       try {
-      const response = await socialServicesGetSocialFeed({
-        body: {
-          user_id: userId || "0b447f7b-9274-4a47-8ce2-4c113eb3cb6e", // sarah_wanderlust
-          page: 0,
-          limit: 20,
-        },
-      });
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
         
-        const newPosts = response.data || [];
+        const response = await fetch(`${apiUrl}/api/social_services/get_social_feed`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userId || "0b447f7b-9274-4a47-8ce2-4c113eb3cb6e",
+            page: pageNum,
+            limit: 20,
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const newPosts = data.posts || [];
         
         if (pageNum === 0) {
           setPosts(newPosts.length > 0 ? newPosts : mockPosts);
@@ -359,10 +370,10 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
           setPosts(prev => [...prev, ...newPosts]);
         }
         
-        setHasMore(newPosts.length === 10);
+        setHasMore(newPosts.length === 20);
         setPage(pageNum);
       } catch (apiError) {
-        console.log('API not available, using mock data');
+        console.log('API not available, using mock data:', apiError);
         if (pageNum === 0) {
           setPosts(mockPosts);
         }
