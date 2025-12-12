@@ -252,14 +252,14 @@ def get_user_saved_posts(user_id: UUID, location_filter: Optional[str] = None, c
 
 @public
 def get_saved_locations(user_id: UUID) -> List[Dict]:
-    """Get unique locations from user's saved posts for organization."""
+    """Get unique collections from user's saved posts for organization."""
     
     results = SavedPost.sql(
-        "SELECT location_category, COUNT(*) as post_count FROM saved_posts WHERE user_id = %(user_id)s AND is_active = true AND location_category IS NOT NULL GROUP BY location_category ORDER BY post_count DESC",
+        "SELECT collection_name, COUNT(*) as post_count FROM saved_posts WHERE user_id = %(user_id)s AND is_active = true AND collection_name IS NOT NULL GROUP BY collection_name ORDER BY post_count DESC",
         {"user_id": user_id}
     )
     
-    return [{"location": row["location_category"], "count": row["post_count"]} for row in results]
+    return [{"collection": row["collection_name"], "count": row["post_count"]} for row in results]
 
 
 @public
