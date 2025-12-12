@@ -668,6 +668,28 @@ async def admin_migrate_database():
                         results.append("✅ Removed location_category from saved_posts")
                     else:
                         results.append("ℹ️ location_category already removed")
+                    
+                    # Add updated_at column if missing
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name='saved_posts' AND column_name='updated_at'
+                    """)
+                    if not cursor.fetchone():
+                        cursor.execute("ALTER TABLE saved_posts ADD COLUMN updated_at TIMESTAMP DEFAULT NOW()")
+                        results.append("✅ Added updated_at to saved_posts")
+                    else:
+                        results.append("ℹ️ updated_at already exists")
+                    
+                    # Remove personal_notes if exists
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name='saved_posts' AND column_name='personal_notes'
+                    """)
+                    if cursor.fetchone():
+                        cursor.execute("ALTER TABLE saved_posts DROP COLUMN IF EXISTS personal_notes CASCADE")
+                        results.append("✅ Removed personal_notes from saved_posts")
                 except Exception as e:
                     results.append(f"⚠️ Error fixing saved_posts: {str(e)}")
                 
