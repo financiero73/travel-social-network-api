@@ -21,11 +21,10 @@ def get_social_feed(user_id: UUID, page: int = 0, limit: int = 20) -> List[Dict]
     )
     
     if not following_results:
-        # If not following anyone, show trending/featured posts
+        # If not following anyone, show all recent posts
         posts_results = TravelPost.sql(
-            "SELECT * FROM travel_posts WHERE is_published = true AND (is_featured = true OR created_at > %(recent_date)s) ORDER BY likes_count DESC, created_at DESC LIMIT %(limit)s OFFSET %(offset)s",
+            "SELECT * FROM travel_posts WHERE is_published = true ORDER BY created_at DESC LIMIT %(limit)s OFFSET %(offset)s",
             {
-                "recent_date": datetime.now() - timedelta(days=7),
                 "limit": limit,
                 "offset": page * limit
             }
