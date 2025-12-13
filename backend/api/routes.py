@@ -53,6 +53,7 @@ REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
 from .models import BodySocialServicesGetSocialFeed, GetSocialFeedOutputSchema, BodySocialServicesLikePost, LikePostOutputSchema, BodySocialServicesSavePostToWishlist, SavePostToWishlistOutputSchema, BodySocialServicesFollowUser, FollowUserOutputSchema, BodySocialServicesGetUserSavedPosts, GetUserSavedPostsOutputSchema, BodySocialServicesGetSavedLocations, GetSavedLocationsOutputSchema, BodySocialServicesCreateTravelPost, CreateTravelPostOutputSchema, BodyAIServicesGenerateTripRecommendations, GenerateTripRecommendationsOutputSchema, BodySocialServicesCreateReview, CreateReviewOutputSchema, BodySocialServicesGetPostReviews, GetPostReviewsOutputSchema, BodySocialServicesUpdateReview, UpdateReviewOutputSchema, BodySocialServicesDeleteReview, DeleteReviewOutputSchema, BodySocialServicesVoteReview, VoteReviewOutputSchema
 from core import social_services
 from core import ai_services
+from core import user_services
 from api import webhooks
 
 
@@ -635,6 +636,34 @@ async def social_services_vote_review(body: BodySocialServicesVoteReview = Body(
     """
     response = await run_sync_in_thread(social_services.vote_review, user_id=body.user_id, review_id=body.review_id, is_helpful=body.is_helpful)
     return response
+
+
+# ==================== USER SERVICES ENDPOINTS ====================
+
+@app.post('/api/user_services/get_user_uuid')
+async def user_services_get_user_uuid(body: Dict = Body(...)) -> Dict:
+    """
+    Get or create user UUID based on Clerk user ID.
+    """
+    clerk_user_id = body.get('clerk_user_id')
+    username = body.get('username', 'user')
+    email = body.get('email', 'user@example.com')
+    display_name = body.get('display_name', username)
+    profile_image_url = body.get('profile_image_url')
+    
+    if not clerk_user_id:
+        raise HTTPException(status_code=400, detail="clerk_user_id is required")
+    
+    user_uuid = await run_sync_in_thread(
+        user_services.get_or_create_user_uuid,
+        clerk_user_id=clerk_user_id,
+        username=username,
+        email=email,
+        display_name=display_name,
+        profile_image_url=profile_image_url
+    )
+    
+    return {"user_id": user_uuid, "clerk_user_id": clerk_user_id}
 
 
 # ==================== DATABASE MIGRATION ENDPOINT ====================
