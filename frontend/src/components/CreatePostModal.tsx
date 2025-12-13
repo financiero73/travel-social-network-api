@@ -19,7 +19,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
     post_type: 'experience',
     category: 'travel',
     tags: [] as string[],
-    experience_rating: 5,
     booking_info: {
       price: '',
       booking_url: '',
@@ -61,7 +60,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
         post_type: 'experience',
         category: 'travel',
         tags: [],
-        experience_rating: 5,
         booking_info: {
           price: '',
           booking_url: '',
@@ -256,19 +254,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
             </div>
           </div>
 
-          {/* Rating */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-white">Experience Rating (1-5)</label>
-            <input
-              type="number"
-              min="1"
-              max="5"
-              required
-              value={formData.experience_rating}
-              onChange={(e) => setFormData({ ...formData, experience_rating: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white"
-            />
-          </div>
+
 
           {/* Booking Info */}
           <div className="space-y-3">
