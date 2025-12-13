@@ -753,3 +753,27 @@ async def admin_migrate_database():
     
     except Exception as e:
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
+##############################################################################
+# Keep-Alive / Health Check Endpoint
+##############################################################################
+
+@app.get("/api/health")
+async def health_check():
+    """
+    Simple health check endpoint for keep-alive services.
+    Returns server status and timestamp.
+    """
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "message": "Backend is awake and running"
+    }
+
+@app.get("/api/ping")
+async def ping():
+    """
+    Ultra-lightweight ping endpoint for keep-alive.
+    """
+    return {"pong": True, "timestamp": datetime.now().isoformat()}
