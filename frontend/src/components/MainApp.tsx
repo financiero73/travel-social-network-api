@@ -34,7 +34,7 @@ const MainApp: React.FC = () => {
   const [videoActivity, setVideoActivity] = useState<{title: string, id: string} | null>(null);
   
   // Mock current user ID - in real app this would come from auth
-  const currentUserId = "123e4567-e89b-12d3-a456-426614174000";
+  const currentUserId = "b0a16eea-68b3-4e0f-8409-176b2ff77a8a";
   
   const handleActivityVideoView = (activityTitle: string, activityId: string) => {
     setVideoActivity({ title: activityTitle, id: activityId });

@@ -753,7 +753,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmitPost}
-        userId={userId || "0b447f7b-9274-4a47-8ce2-4c113eb3cb6e"}
+        userId={userId || "b0a16eea-68b3-4e0f-8409-176b2ff77a8a"}
       />
     </div>
   );
