@@ -419,12 +419,25 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
 
   const handleLike = async (postId: string, currentlyLiked: boolean) => {
     try {
-      const response = await socialServicesLikePost({
-        body: {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
+      
+      const response = await fetch(`${apiUrl}/api/social_services/like_post`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           user_id: userId,
           post_id: postId
-        }
+        })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('❤️ Like action:', data);
       
       // Update local state
       setPosts(prev => prev.map(post => 
@@ -432,25 +445,37 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
           ? {
               ...post,
               is_liked: !currentlyLiked,
-              post: { ...post.post, likes_count: response.data.likes_count }
+              post: { ...post.post, likes_count: data.likes_count }
             }
           : post
       ));
     } catch (error) {
-      console.error('Error liking post:', error);
+      console.error('❌ Error liking post:', error);
     }
   };
 
   const handleSave = async (postId: string, currentlySaved: boolean, collectionName?: string) => {
     try {
-      const response = await socialServicesSavePostToWishlist({
-        body: {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
+      
+      const response = await fetch(`${apiUrl}/api/social_services/save_post_to_wishlist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           user_id: userId,
           post_id: postId,
-          collection_name: collectionName || null,
-          notes: null
-        }
+          collection_name: collectionName || 'My Wishlist'
+        })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('🔖 Save action:', data);
       
       // Update local state
       setPosts(prev => prev.map(post => 
@@ -458,27 +483,40 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
           ? {
               ...post,
               is_saved: !currentlySaved,
-              post: { ...post.post, saves_count: response.data.saves_count }
+              post: { ...post.post, saves_count: data.saves_count }
             }
           : post
       ));
     } catch (error) {
-      console.error('Error saving post:', error);
+      console.error('❌ Error saving post:', error);
     }
   };
 
   const handleFollow = async (authorId: string) => {
     try {
-      await socialServicesFollowUser({
-        body: {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
+      
+      const response = await fetch(`${apiUrl}/api/social_services/follow_user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           follower_id: userId,
           following_id: authorId
-        }
+        })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('👥 Follow action:', data);
       
       // Optionally update UI to show followed state
     } catch (error) {
-      console.error('Error following user:', error);
+      console.error('❌ Error following user:', error);
     }
   };
 
