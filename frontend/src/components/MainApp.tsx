@@ -36,7 +36,39 @@ const MainApp: React.FC = () => {
   
   // Get current user from Clerk
   const { user, isLoaded } = useUser();
-  const currentUserId = user?.id || "b0a16eea-68b3-4e0f-8409-176b2ff77a8a";
+  const [currentUserId, setCurrentUserId] = React.useState<string>("b0a16eea-68b3-4e0f-8409-176b2ff77a8a");
+  
+  // Get or create user UUID when Clerk user is loaded
+  React.useEffect(() => {
+    const getUserUuid = async () => {
+      if (user) {
+        try {
+          const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
+          const response = await fetch(`${apiUrl}/api/user_services/get_user_uuid`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clerk_user_id: user.id,
+              username: user.username || user.id,
+              email: user.primaryEmailAddress?.emailAddress || 'user@example.com',
+              display_name: user.fullName || user.username || 'User',
+              profile_image_url: user.imageUrl
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setCurrentUserId(data.user_id);
+            console.log('✅ User UUID obtained:', data.user_id);
+          }
+        } catch (error) {
+          console.error('❌ Error getting user UUID:', error);
+        }
+      }
+    };
+    
+    getUserUuid();
+  }, [user]);
   
   // Show loading state while Clerk is loading
   if (!isLoaded) {
