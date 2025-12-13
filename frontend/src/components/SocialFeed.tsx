@@ -227,8 +227,8 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
       
-      console.log('Creating post with data:', postData);
-      alert('Creating post... This may take up to 60 seconds if the backend is waking up.');
+      console.log('🚀 Creating post with data:', postData);
+      console.log('⏳ Please wait... This may take up to 60 seconds if the backend is waking up.');
       
       const response = await fetch(`${apiUrl}/api/social_services/create_travel_post`, {
         method: 'POST',
@@ -242,24 +242,29 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('Post created successfully:', result);
+      console.log('✅ Post created successfully:', result);
       
-      alert("Post created successfully! Reloading feed...");
       setIsModalOpen(false);
       loadFeed();
     } catch (error: any) {
-      console.error('Error creating post:', error);
+      console.error('❌ Error creating post:', error);
+      let errorMessage = 'Failed to create post. ';
+      
       if (error.name === 'AbortError') {
-        alert('Error: Request timed out after 60 seconds. The backend may be sleeping. Please try again.');
+        errorMessage += 'Request timed out after 60 seconds. The backend may be sleeping. Please try again in a moment.';
+      } else if (error.message) {
+        errorMessage += error.message;
       } else {
-        alert(`Error creating post: ${error.message}`);
+        errorMessage += 'Unknown error occurred.';
       }
-      throw error;
+      
+      // Re-throw with user-friendly message
+      throw new Error(errorMessage);
     }
   };
   const [loading, setLoading] = useState(true);

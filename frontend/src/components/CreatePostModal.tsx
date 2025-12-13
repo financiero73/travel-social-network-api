@@ -29,12 +29,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
 
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     
     try {
       // Clean up the data before submitting
@@ -67,8 +69,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
         }
       });
       setTagInput('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in modal submit:', error);
+      setError(error.message || 'Failed to create post. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -301,6 +304,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
               placeholder="Affiliate Code"
             />
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-200 text-sm">
+              {error}
+            </div>
+          )}
 
           {/* Submit Buttons */}
           <div className="flex gap-3 pt-4 sticky bottom-0 bg-gray-800 pb-2">
