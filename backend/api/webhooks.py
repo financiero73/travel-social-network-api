@@ -48,14 +48,18 @@ async def clerk_webhook(
             display_name = f"{first_name} {last_name}".strip() or username
             profile_image_url = data.get("image_url")
             
-            # Create user in database
+            # Create user in database with generated UUID
+            import uuid
+            new_user_id = str(uuid.uuid4())
+            
             TravelUser.sql(
                 """INSERT INTO travel_users 
-                   (id, email, username, display_name, profile_image_url, created_at)
-                   VALUES (%(id)s, %(email)s, %(username)s, %(display_name)s, %(profile_image_url)s, NOW())
-                   ON CONFLICT (id) DO NOTHING""",
+                   (id, clerk_user_id, email, username, display_name, profile_image_url, created_at)
+                   VALUES (%(id)s, %(clerk_user_id)s, %(email)s, %(username)s, %(display_name)s, %(profile_image_url)s, NOW())
+                   ON CONFLICT (clerk_user_id) DO NOTHING""",
                 {
-                    "id": user_id,
+                    "id": new_user_id,
+                    "clerk_user_id": user_id,
                     "email": email,
                     "username": username,
                     "display_name": display_name,
@@ -83,9 +87,9 @@ async def clerk_webhook(
                        display_name = %(display_name)s,
                        profile_image_url = %(profile_image_url)s,
                        last_active = NOW()
-                   WHERE id = %(id)s""",
+                   WHERE clerk_user_id = %(clerk_user_id)s""",
                 {
-                    "id": user_id,
+                    "clerk_user_id": user_id,
                     "email": email,
                     "username": username,
                     "display_name": display_name,
@@ -98,8 +102,8 @@ async def clerk_webhook(
             # Soft delete user
             user_id = data.get("id")
             TravelUser.sql(
-                "UPDATE travel_users SET deleted_at = NOW() WHERE id = %(id)s",
-                {"id": user_id}
+                "UPDATE travel_users SET is_private = true, last_active = NOW() WHERE clerk_user_id = %(clerk_user_id)s",
+                {"clerk_user_id": user_id}
             )
             print(f"✅ Deleted user: {user_id}")
         

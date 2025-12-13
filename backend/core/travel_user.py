@@ -7,6 +7,7 @@ class TravelUser(Table):
     __tablename__ = "travel_users"
     
     id: uuid.UUID = ColumnDetails(default_factory=uuid.uuid4, primary_key=True)
+    clerk_user_id: Optional[str] = None  # Clerk user ID for authentication
     username: str
     email: str
     display_name: str
