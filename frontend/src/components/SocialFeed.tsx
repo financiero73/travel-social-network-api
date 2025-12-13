@@ -222,13 +222,20 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
 
   const handleSubmitPost = async (postData: any) => {
     try {
+      // Validate userId before creating post
+      if (!userId) {
+        throw new Error('User ID not loaded. Please refresh the page.');
+      }
+      
+      console.log('📋 Using user_id:', userId);
+      console.log('🚀 Creating post with data:', postData);
+      
       const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
       
       // Create abort controller with 60 second timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
       
-      console.log('🚀 Creating post with data:', postData);
       console.log('⏳ Please wait... This may take up to 60 seconds if the backend is waking up.');
       
       const response = await fetch(`${apiUrl}/api/social_services/create_travel_post`, {

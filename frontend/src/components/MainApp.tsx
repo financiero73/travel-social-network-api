@@ -36,14 +36,18 @@ const MainApp: React.FC = () => {
   
   // Get current user from Clerk
   const { user, isLoaded } = useUser();
-  const [currentUserId, setCurrentUserId] = React.useState<string>("b0a16eea-68b3-4e0f-8409-176b2ff77a8a");
+  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
+  const [loadingUserId, setLoadingUserId] = React.useState(true);
   
   // Get or create user UUID when Clerk user is loaded
   React.useEffect(() => {
     const getUserUuid = async () => {
       if (user) {
+        setLoadingUserId(true);
         try {
           const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
+          console.log('🔄 Fetching UUID for Clerk user:', user.id);
+          
           const response = await fetch(`${apiUrl}/api/user_services/get_user_uuid`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -60,18 +64,29 @@ const MainApp: React.FC = () => {
             const data = await response.json();
             setCurrentUserId(data.user_id);
             console.log('✅ User UUID obtained:', data.user_id);
+            console.log('📋 Clerk ID:', user.id);
+          } else {
+            console.error('❌ Failed to get user UUID, status:', response.status);
+            const errorText = await response.text();
+            console.error('Error details:', errorText);
+            alert('Error: Could not load user profile. Please refresh the page.');
           }
         } catch (error) {
           console.error('❌ Error getting user UUID:', error);
+          alert('Error: Could not connect to server. Please refresh the page.');
+        } finally {
+          setLoadingUserId(false);
         }
+      } else {
+        setLoadingUserId(false);
       }
     };
     
     getUserUuid();
   }, [user]);
   
-  // Show loading state while Clerk is loading
-  if (!isLoaded) {
+  // Show loading state while Clerk is loading or getting UUID
+  if (!isLoaded || loadingUserId) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900">
         <div className="text-white text-xl">Loading...</div>
