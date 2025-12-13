@@ -777,3 +777,42 @@ async def ping():
     Ultra-lightweight ping endpoint for keep-alive.
     """
     return {"pong": True, "timestamp": datetime.now().isoformat()}
+
+# ==================== DEMO USER CREATION ====================
+
+@app.post("/api/create_demo_user")
+async def create_demo_user():
+    """Create a demo user for testing purposes"""
+    from core.travel_user import TravelUser
+    import uuid
+    
+    demo_user_id = uuid.UUID('b0a16eea-68b3-4e0f-8409-176b2ff77a8a')
+    
+    try:
+        # Check if user already exists
+        existing = TravelUser.sql(
+            "SELECT * FROM travel_users WHERE id = %(id)s",
+            {"id": demo_user_id}
+        )
+        
+        if existing:
+            return {"message": "Demo user already exists", "user_id": str(demo_user_id)}
+        
+        # Create demo user
+        TravelUser.sql(
+            """INSERT INTO travel_users (id, email, username, full_name, bio, profile_picture_url, is_verified, created_at)
+               VALUES (%(id)s, %(email)s, %(username)s, %(full_name)s, %(bio)s, %(profile_picture_url)s, %(is_verified)s, NOW())""",
+            {
+                "id": demo_user_id,
+                "email": "demo@travelsocial.com",
+                "username": "demo_user",
+                "full_name": "Demo User",
+                "bio": "Demo user for testing",
+                "profile_picture_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
+                "is_verified": True
+            }
+        )
+        
+        return {"message": "Demo user created successfully", "user_id": str(demo_user_id)}
+    except Exception as e:
+        return {"error": str(e)}

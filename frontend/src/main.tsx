@@ -3,6 +3,7 @@ import './logger.ts';
 import { StrictMode, useEffect, useState, useRef, createContext, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ClerkProvider } from '@clerk/clerk-react';
 
 import Fallback from "./Fallback.tsx";
 import "./index.css";
@@ -13,6 +14,13 @@ client.setConfig({
   baseUrl: "https://" + window.location.hostname.replace("5173", "8000"),
 });
 
+// Import Clerk publishable key
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing Publishable Key");
+}
+
 export const AuthTokenContext = createContext<string | null>(null);
 const Root = () => {
   Element.prototype.scrollIntoView = function() { return false; };
@@ -20,16 +28,16 @@ const Root = () => {
   Element.prototype.scrollBy = function() { return false; };
 
   return (
-    <>
-        <BrowserRouter>
-          <Routes>
-            <Route path="*" element={
-                <Router />
-            } />
-          </Routes>
-        </BrowserRouter>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={
+              <Router />
+          } />
+        </Routes>
+      </BrowserRouter>
       <ScreenshotComponent />
-    </>
+    </ClerkProvider>
   )
 }
 

@@ -3,6 +3,7 @@ import { User, Calendar, Globe, MapPin, Play, Mountain, Search, Heart, House } f
 
 
 import React, { useState } from 'react';
+import { useUser, UserButton } from '@clerk/clerk-react';
 import { useKeepAlive } from '../hooks/useKeepAlive';
 
 import TravelFeedScreen from './TravelFeedScreen';
@@ -33,8 +34,18 @@ const MainApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('social');
   const [videoActivity, setVideoActivity] = useState<{title: string, id: string} | null>(null);
   
-  // Mock current user ID - in real app this would come from auth
-  const currentUserId = "b0a16eea-68b3-4e0f-8409-176b2ff77a8a";
+  // Get current user from Clerk
+  const { user, isLoaded } = useUser();
+  const currentUserId = user?.id || "b0a16eea-68b3-4e0f-8409-176b2ff77a8a";
+  
+  // Show loading state while Clerk is loading
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
   
   const handleActivityVideoView = (activityTitle: string, activityId: string) => {
     setVideoActivity({ title: activityTitle, id: activityId });

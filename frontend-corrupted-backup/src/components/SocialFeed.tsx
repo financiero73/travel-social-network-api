@@ -1,6 +1,5 @@
 import { Heart, Bookmark, MessageCircle, Share, MapPin, Star, UserCheck, Play, Pause, Volume2, VolumeX, PlusCircle } from "lucide-react";
 import React, { useState, useEffect, useRef } from 'react';
-import { UserButton } from '@clerk/clerk-react';
 
 import { socialServicesGetSocialFeed, socialServicesLikePost, socialServicesSavePostToWishlist, socialServicesFollowUser, socialServicesCreateTravelPost } from '@/lib/sdk';
 import ReviewsButton from './ReviewsButton';
@@ -224,48 +223,29 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
       
-      // Create abort controller with 60 second timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-      
-      console.log('🚀 Creating post with data:', postData);
-      console.log('⏳ Please wait... This may take up to 60 seconds if the backend is waking up.');
-      
       const response = await fetch(`${apiUrl}/api/social_services/create_travel_post`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(postData),
-        signal: controller.signal
+        body: JSON.stringify(postData)
       });
-      
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('✅ Post created successfully:', result);
+      console.log('Post created successfully:', result);
       
+      alert("Post created successfully! Reloading feed...");
       setIsModalOpen(false);
       loadFeed();
     } catch (error: any) {
-      console.error('❌ Error creating post:', error);
-      let errorMessage = 'Failed to create post. ';
-      
-      if (error.name === 'AbortError') {
-        errorMessage += 'Request timed out after 60 seconds. The backend may be sleeping. Please try again in a moment.';
-      } else if (error.message) {
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'Unknown error occurred.';
-      }
-      
-      // Re-throw with user-friendly message
-      throw new Error(errorMessage);
+      console.error('Error creating post:', error);
+      alert(`Error creating post: ${error.message}`);
+      throw error;
     }
   };
   const [loading, setLoading] = useState(true);
@@ -363,33 +343,15 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
       
       // Try to load real data, fallback to mock data
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
+      const response = await socialServicesGetSocialFeed({
+        body: {
+          user_id: userId || "0b447f7b-9274-4a47-8ce2-4c113eb3cb6e", // sarah_wanderlust
+          page: 0,
+          limit: 20,
+        },
+      });
         
-        // Create abort controller with 60 second timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
-        
-        const response = await fetch(`${apiUrl}/api/social_services/get_social_feed`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userId || "0b447f7b-9274-4a47-8ce2-4c113eb3cb6e",
-            page: pageNum,
-            limit: 20,
-          }),
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const newPosts = data.posts || [];
+        const newPosts = response.data || [];
         
         if (pageNum === 0) {
           setPosts(newPosts.length > 0 ? newPosts : mockPosts);
@@ -397,10 +359,10 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
           setPosts(prev => [...prev, ...newPosts]);
         }
         
-        setHasMore(newPosts.length === 20);
+        setHasMore(newPosts.length === 10);
         setPage(pageNum);
       } catch (apiError) {
-        console.log('API not available, using mock data:', apiError);
+        console.log('API not available, using mock data');
         if (pageNum === 0) {
           setPosts(mockPosts);
         }
@@ -420,25 +382,12 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
 
   const handleLike = async (postId: string, currentlyLiked: boolean) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
-      
-      const response = await fetch(`${apiUrl}/api/social_services/like_post`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await socialServicesLikePost({
+        body: {
           user_id: userId,
           post_id: postId
-        })
+        }
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('❤️ Like action:', data);
       
       // Update local state
       setPosts(prev => prev.map(post => 
@@ -446,37 +395,25 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
           ? {
               ...post,
               is_liked: !currentlyLiked,
-              post: { ...post.post, likes_count: data.likes_count }
+              post: { ...post.post, likes_count: response.data.likes_count }
             }
           : post
       ));
     } catch (error) {
-      console.error('❌ Error liking post:', error);
+      console.error('Error liking post:', error);
     }
   };
 
   const handleSave = async (postId: string, currentlySaved: boolean, collectionName?: string) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
-      
-      const response = await fetch(`${apiUrl}/api/social_services/save_post_to_wishlist`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await socialServicesSavePostToWishlist({
+        body: {
           user_id: userId,
           post_id: postId,
-          collection_name: collectionName || 'My Wishlist'
-        })
+          collection_name: collectionName || null,
+          notes: null
+        }
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('🔖 Save action:', data);
       
       // Update local state
       setPosts(prev => prev.map(post => 
@@ -484,40 +421,27 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
           ? {
               ...post,
               is_saved: !currentlySaved,
-              post: { ...post.post, saves_count: data.saves_count }
+              post: { ...post.post, saves_count: response.data.saves_count }
             }
           : post
       ));
     } catch (error) {
-      console.error('❌ Error saving post:', error);
+      console.error('Error saving post:', error);
     }
   };
 
   const handleFollow = async (authorId: string) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
-      
-      const response = await fetch(`${apiUrl}/api/social_services/follow_user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await socialServicesFollowUser({
+        body: {
           follower_id: userId,
           following_id: authorId
-        })
+        }
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('👥 Follow action:', data);
       
       // Optionally update UI to show followed state
     } catch (error) {
-      console.error('❌ Error following user:', error);
+      console.error('Error following user:', error);
     }
   };
 
@@ -558,24 +482,13 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
           <h1 className="text-2xl font-bold text-cyan-400">Social Feed</h1>
           <p className="text-sm text-gray-400">See what the community is exploring.</p>
         </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={handleCreatePost}
-            className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-black font-semibold py-2 px-4 rounded-full transition-colors"
-          >
-            <PlusCircle className="w-5 h-5" />
-            <span>Create Post</span>
-          </button>
-          <UserButton 
-            appearance={{
-              elements: {
-                avatarBox: "w-10 h-10",
-                userButtonPopoverCard: "bg-gray-800 border border-gray-700",
-                userButtonPopoverActionButton: "text-white hover:bg-gray-700"
-              }
-            }}
-          />
-        </div>
+        <button
+          onClick={handleCreatePost}
+          className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-black font-semibold py-2 px-4 rounded-full transition-colors"
+        >
+          <PlusCircle className="w-5 h-5" />
+          <span>Create Post</span>
+        </button>
       </div>
       {/* TikTok-style full screen video feed */}
       <div className="h-full overflow-y-auto snap-y snap-mandatory">
@@ -765,7 +678,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmitPost}
-        userId={userId || "b0a16eea-68b3-4e0f-8409-176b2ff77a8a"}
+        userId={userId || "0b447f7b-9274-4a47-8ce2-4c113eb3cb6e"}
       />
     </div>
   );
