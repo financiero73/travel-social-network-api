@@ -3,6 +3,7 @@ import { User, Calendar, Globe, MapPin, Play, Mountain, Search, Heart, House } f
 
 
 import React, { useState } from 'react';
+import { useKeepAlive } from '../hooks/useKeepAlive';
 
 import TravelFeedScreen from './TravelFeedScreen';
 import ProfileScreen from './ProfileScreen';
@@ -26,6 +27,9 @@ interface Tab {
 }
 
 const MainApp: React.FC = () => {
+  // Keep backend alive with automatic pings every 10 minutes
+  useKeepAlive();
+  
   const [activeTab, setActiveTab] = useState<TabType>('social');
   const [videoActivity, setVideoActivity] = useState<{title: string, id: string} | null>(null);
   
