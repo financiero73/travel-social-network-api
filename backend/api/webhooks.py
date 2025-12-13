@@ -51,8 +51,8 @@ async def clerk_webhook(
             # Create user in database
             TravelUser.sql(
                 """INSERT INTO travel_users 
-                   (id, email, username, display_name, profile_image_url, created_at, updated_at)
-                   VALUES (%(id)s, %(email)s, %(username)s, %(display_name)s, %(profile_image_url)s, NOW(), NOW())
+                   (id, email, username, display_name, profile_image_url, created_at)
+                   VALUES (%(id)s, %(email)s, %(username)s, %(display_name)s, %(profile_image_url)s, NOW())
                    ON CONFLICT (id) DO NOTHING""",
                 {
                     "id": user_id,
@@ -82,7 +82,7 @@ async def clerk_webhook(
                        username = %(username)s,
                        display_name = %(display_name)s,
                        profile_image_url = %(profile_image_url)s,
-                       updated_at = NOW()
+                       last_active = NOW()
                    WHERE id = %(id)s""",
                 {
                     "id": user_id,
