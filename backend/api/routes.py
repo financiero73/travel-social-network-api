@@ -53,6 +53,7 @@ REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
 from .models import BodySocialServicesGetSocialFeed, GetSocialFeedOutputSchema, BodySocialServicesLikePost, LikePostOutputSchema, BodySocialServicesSavePostToWishlist, SavePostToWishlistOutputSchema, BodySocialServicesFollowUser, FollowUserOutputSchema, BodySocialServicesGetUserSavedPosts, GetUserSavedPostsOutputSchema, BodySocialServicesGetSavedLocations, GetSavedLocationsOutputSchema, BodySocialServicesCreateTravelPost, CreateTravelPostOutputSchema, BodyAIServicesGenerateTripRecommendations, GenerateTripRecommendationsOutputSchema, BodySocialServicesCreateReview, CreateReviewOutputSchema, BodySocialServicesGetPostReviews, GetPostReviewsOutputSchema, BodySocialServicesUpdateReview, UpdateReviewOutputSchema, BodySocialServicesDeleteReview, DeleteReviewOutputSchema, BodySocialServicesVoteReview, VoteReviewOutputSchema
 from core import social_services
 from core import ai_services
+from api import webhooks
 
 
 ###############################################################################
@@ -122,6 +123,9 @@ app = FastAPI(
     title="New app — 8/15 @ 4:56 PM",
     docs_url=None
 )
+
+# Include webhooks router
+app.include_router(webhooks.router)
 
 ###############################################################################
 # Simple Request Logging Middleware
