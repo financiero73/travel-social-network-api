@@ -46,7 +46,7 @@ interface Post {
 }
 
 interface SocialFeedProps {
-  userId: string;
+  userId: string | null;
 }
 
 // Video Player Component with actual video playback
@@ -427,6 +427,13 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
 
   const handleLike = async (postId: string, currentlyLiked: boolean) => {
     try {
+      if (!userId) {
+        console.error('❌ Cannot like post: User ID not loaded');
+        alert('Please wait for your profile to load before liking posts.');
+        return;
+      }
+      
+      console.log('❤️ Liking post:', postId, 'with user_id:', userId);
       const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
       
       const response = await fetch(`${apiUrl}/api/social_services/like_post`, {
@@ -464,6 +471,13 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
 
   const handleSave = async (postId: string, currentlySaved: boolean, collectionName?: string) => {
     try {
+      if (!userId) {
+        console.error('❌ Cannot save post: User ID not loaded');
+        alert('Please wait for your profile to load before saving posts.');
+        return;
+      }
+      
+      console.log('💾 Saving post:', postId, 'with user_id:', userId);
       const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
       
       const response = await fetch(`${apiUrl}/api/social_services/save_post_to_wishlist`, {
@@ -502,6 +516,13 @@ const SocialFeed: React.FC<SocialFeedProps> = ({ userId }) => {
 
   const handleFollow = async (authorId: string) => {
     try {
+      if (!userId) {
+        console.error('❌ Cannot follow user: User ID not loaded');
+        alert('Please wait for your profile to load before following users.');
+        return;
+      }
+      
+      console.log('👤 Following user:', authorId, 'with user_id:', userId);
       const apiUrl = import.meta.env.VITE_API_URL || 'https://travel-social-network-api.onrender.com';
       
       const response = await fetch(`${apiUrl}/api/social_services/follow_user`, {
